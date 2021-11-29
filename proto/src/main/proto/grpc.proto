@@ -414,6 +414,36 @@ message PaymentAccountPayloadInfo {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+// TradeChat
+///////////////////////////////////////////////////////////////////////////////////////////
+
+service TradeChat {
+	rpc GetChatMessages (ChatMessageRequest) returns (ChatMessageResponse) {
+	}
+	rpc SendChatMessage (stream TradeChatMessage) returns (stream TradeChatMessage) {
+	}
+	rpc OnChatMessage (TradeChatMessage) returns (FunctionInvoker) {
+	}
+}
+
+message TradeChatMessage {
+	string trade_id = 1;
+	string message = 2;
+}
+
+message ChatMessageRequest {
+	string trade_id = 1;
+}
+
+message ChatMessageResponse {
+	repeated string message = 1;
+}
+
+message FunctionInvoker {
+	bool invoke = 1;
+}
+	
+///////////////////////////////////////////////////////////////////////////////////////////
 // Transactions
 ///////////////////////////////////////////////////////////////////////////////////////////
 
