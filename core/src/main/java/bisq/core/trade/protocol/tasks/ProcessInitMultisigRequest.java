@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.trade.protocol.tasks;
@@ -22,8 +22,9 @@ import bisq.core.trade.MakerTrade;
 import bisq.core.trade.TakerTrade;
 import bisq.core.trade.Trade;
 import bisq.core.trade.messages.InitMultisigRequest;
+import bisq.core.trade.protocol.TradeListener;
 import bisq.core.trade.protocol.TradingPeer;
-
+import bisq.network.p2p.AckMessage;
 import bisq.network.p2p.NodeAddress;
 import bisq.network.p2p.SendDirectMessageListener;
 
@@ -50,6 +51,7 @@ public class ProcessInitMultisigRequest extends TradeTask {
 
     private boolean ack1 = false;
     private boolean ack2 = false;
+    private boolean failed = false;
     private static Object lock = new Object();
     MoneroWallet multisigWallet;
 
@@ -149,37 +151,31 @@ public class ProcessInitMultisigRequest extends TradeTask {
               if (peer2Address == null) throw new RuntimeException("Peer2 address is null");
               if (peer2PubKeyRing == null) throw new RuntimeException("Peer2 pub key ring null");
 
-              // send to peer 1
-              sendInitMultisigRequest(peer1Address, peer1PubKeyRing, new SendDirectMessageListener() {
-                @Override
-                public void onArrived() {
-                    log.info("{} arrived: peer={}; offerId={}; uid={}", request.getClass().getSimpleName(), peer1Address, request.getTradeId(), request.getUid());
-                    ack1 = true;
-                    if (ack1 && ack2) completeAux();
-                }
-                @Override
-                public void onFault(String errorMessage) {
-                    log.error("Sending {} failed: uid={}; peer={}; error={}", request.getClass().getSimpleName(), request.getUid(), peer1Address, errorMessage);
-                    appendToErrorMessage("Sending message failed: message=" + request + "\nerrorMessage=" + errorMessage);
-                    failed();
-                }
-              });
+              // complete on successful ack messages
+              TradeListener ackListener = new TradeListener() {
+                  @Override
+                  public void onAckMessage(AckMessage ackMessage, NodeAddress sender) {
+                      if (!ackMessage.getSourceMsgClassName().equals(InitMultisigRequest.class.getSimpleName())) return;
+                      if (ackMessage.isSuccess()) {
+                         if (sender.equals(peer1Address)) ack1 = true;
+                         if (sender.equals(peer2Address)) ack2 = true;
+                         if (ack1 && ack2) {
+                             trade.removeListener(this);
+                             completeAux();
+                         }
+                      } else {
+                          if (!failed) {
+                              failed = true;
+                              failed(ackMessage.getErrorMessage()); // TODO: (woodser): only fail once? build into task?
+                          }
+                      }
+                  }
+              };
+              trade.addListener(ackListener);
 
-              // send to peer 2
-              sendInitMultisigRequest(peer2Address, peer2PubKeyRing, new SendDirectMessageListener() {
-                @Override
-                public void onArrived() {
-                    log.info("{} arrived: peer={}; offerId={}; uid={}", request.getClass().getSimpleName(), peer2Address, request.getTradeId(), request.getUid());
-                    ack2 = true;
-                    if (ack1 && ack2) completeAux();
-                }
-                @Override
-                public void onFault(String errorMessage) {
-                    log.error("Sending {} failed: uid={}; peer={}; error={}", request.getClass().getSimpleName(), request.getUid(), peer2Address, errorMessage);
-                    appendToErrorMessage("Sending message failed: message=" + request + "\nerrorMessage=" + errorMessage);
-                    failed();
-                }
-              });
+              // send to peers
+              sendInitMultisigRequest(peer1Address, peer1PubKeyRing);
+              sendInitMultisigRequest(peer2Address, peer2PubKeyRing);
             } else {
               completeAux();
             }
@@ -204,21 +200,32 @@ public class ProcessInitMultisigRequest extends TradeTask {
       return peers;
     }
 
-    private void sendInitMultisigRequest(NodeAddress recipient, PubKeyRing pubKeyRing, SendDirectMessageListener listener) {
+    private void sendInitMultisigRequest(NodeAddress recipient, PubKeyRing pubKeyRing) {
 
-      // create multisig message with current multisig hex
-      InitMultisigRequest request = new InitMultisigRequest(
-              processModel.getOffer().getId(),
-              processModel.getMyNodeAddress(),
-              processModel.getPubKeyRing(),
-              UUID.randomUUID().toString(),
-              Version.getP2PMessageVersion(),
-              new Date().getTime(),
-              processModel.getPreparedMultisigHex(),
-              processModel.getMadeMultisigHex());
-
-      log.info("Send {} with offerId {} and uid {} to peer {}", request.getClass().getSimpleName(), request.getTradeId(), request.getUid(), recipient);
-      processModel.getP2PService().sendEncryptedDirectMessage(recipient, pubKeyRing, request, listener);
+        // create request with current multisig hex
+        InitMultisigRequest request = new InitMultisigRequest(
+                processModel.getOffer().getId(),
+                processModel.getMyNodeAddress(),
+                processModel.getPubKeyRing(),
+                UUID.randomUUID().toString(),
+                Version.getP2PMessageVersion(),
+                new Date().getTime(),
+                processModel.getPreparedMultisigHex(),
+                processModel.getMadeMultisigHex());
+    
+        log.info("Send {} with offerId {} and uid {} to peer {}", request.getClass().getSimpleName(), request.getTradeId(), request.getUid(), recipient);
+        processModel.getP2PService().sendEncryptedDirectMessage(recipient, pubKeyRing, request, new SendDirectMessageListener() {
+            @Override
+            public void onArrived() {
+                log.info("{} arrived: peer={}; offerId={}; uid={}", request.getClass().getSimpleName(), recipient, request.getTradeId(), request.getUid());
+            }
+            @Override
+            public void onFault(String errorMessage) {
+                log.error("Sending {} failed: uid={}; peer={}; error={}", request.getClass().getSimpleName(), request.getUid(), recipient, errorMessage);
+                appendToErrorMessage("Sending message failed: message=" + request + "\nerrorMessage=" + errorMessage);
+                failed();
+            }
+        });
     }
 
     private void completeAux() {

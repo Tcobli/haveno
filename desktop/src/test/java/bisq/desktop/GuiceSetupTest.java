@@ -1,6 +1,6 @@
 package bisq.desktop;
 
-import bisq.desktop.app.BisqAppModule;
+import bisq.desktop.app.HavenoAppModule;
 import bisq.desktop.common.view.CachingViewLoader;
 import bisq.desktop.common.view.ViewLoader;
 import bisq.desktop.common.view.guice.InjectorViewFactory;
@@ -77,7 +77,7 @@ public class GuiceSetupTest {
         Res.setup();
         CurrencyUtil.setup();
 
-        injector = Guice.createInjector(new BisqAppModule(new Config()));
+        injector = Guice.createInjector(new HavenoAppModule(new Config()));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class GuiceSetupTest {
         assertSingleton(DisplayedTransactionsFactory.class);
 
         // core module
-//        assertSingleton(BisqSetup.class); // this is a can of worms
+//        assertSingleton(HavenoSetup.class); // this is a can of worms
 //        assertSingleton(DisputeMsgEvents.class);
         assertSingleton(TorSetup.class);
         assertSingleton(P2PNetworkSetup.class);

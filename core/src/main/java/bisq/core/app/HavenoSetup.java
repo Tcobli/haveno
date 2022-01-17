@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.app;
@@ -100,11 +100,11 @@ import javax.annotation.Nullable;
 
 @Slf4j
 @Singleton
-public class BisqSetup {
+public class HavenoSetup {
     private static final String VERSION_FILE_NAME = "version";
     private static final String RESYNC_SPV_FILE_NAME = "resyncSpv";
 
-    public interface BisqSetupListener {
+    public interface HavenoSetupListener {
         default void onInitP2pNetwork() {
         }
 
@@ -195,10 +195,10 @@ public class BisqSetup {
     private boolean allBasicServicesInitialized;
     @SuppressWarnings("FieldCanBeLocal")
     private MonadicBinding<Boolean> p2pNetworkAndWalletInitialized;
-    private final List<BisqSetupListener> bisqSetupListeners = new ArrayList<>();
+    private final List<HavenoSetupListener> bisqSetupListeners = new ArrayList<>();
 
     @Inject
-    public BisqSetup(DomainInitialisation domainInitialisation,
+    public HavenoSetup(DomainInitialisation domainInitialisation,
                      P2PNetworkSetup p2PNetworkSetup,
                      WalletAppSetup walletAppSetup,
                      WalletsManager walletsManager,
@@ -273,7 +273,7 @@ public class BisqSetup {
     // Main startup tasks
     ///////////////////////////////////////////////////////////////////////////////////////////
 
-    public void addBisqSetupListener(BisqSetupListener listener) {
+    public void addHavenoSetupListener(HavenoSetupListener listener) {
         bisqSetupListeners.add(listener);
     }
 
@@ -303,7 +303,7 @@ public class BisqSetup {
     private void step4() {
         initDomainServices();
 
-        bisqSetupListeners.forEach(BisqSetupListener::onSetupComplete);
+        bisqSetupListeners.forEach(HavenoSetupListener::onSetupComplete);
 
         // We set that after calling the setupCompleteHandler to not trigger a popup from the dev dummy accounts
         // in MainViewModel
@@ -373,7 +373,7 @@ public class BisqSetup {
         }, STARTUP_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
         log.info("Init P2P network");
-        bisqSetupListeners.forEach(BisqSetupListener::onInitP2pNetwork);
+        bisqSetupListeners.forEach(HavenoSetupListener::onInitP2pNetwork);
         p2pNetworkReady = p2PNetworkSetup.init(this::initWallet, displayTorNetworkSettingsHandler);
 
         // We only init wallet service here if not using Tor for bitcoinj.
@@ -402,10 +402,10 @@ public class BisqSetup {
 
     private void initWallet() {
         log.info("Init wallet");
-        bisqSetupListeners.forEach(BisqSetupListener::onInitWallet);
+        bisqSetupListeners.forEach(HavenoSetupListener::onInitWallet);
         Runnable walletPasswordHandler = () -> {
             log.info("Wallet password required");
-            bisqSetupListeners.forEach(BisqSetupListener::onRequestWalletPassword);
+            bisqSetupListeners.forEach(HavenoSetupListener::onRequestWalletPassword);
             if (p2pNetworkReady.get())
                 p2PNetworkSetup.setSplashP2PNetworkAnimationVisible(true);
 

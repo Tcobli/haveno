@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.api;
@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -142,20 +143,31 @@ class CoreOffersService {
     }
 
     List<Offer> getMyOffers(String direction, String currencyCode) {
+
+        // get my offers posted to books
         List<Offer> offers = offerBookService.getOffers().stream()
                 .filter(o -> o.isMyOffer(keyRing))
                 .filter(o -> offerMatchesDirectionAndCurrency(o, direction, currencyCode))
                 .sorted(priceComparator(direction))
                 .collect(Collectors.toList());
+
+        // remove unreserved offers
         Set<Offer> unreservedOffers = getUnreservedOffers(offers);
         offers.removeAll(unreservedOffers);
-        
+
         // remove my unreserved offers from offer manager
         List<OpenOffer> unreservedOpenOffers = new ArrayList<OpenOffer>();
         for (Offer unreservedOffer : unreservedOffers) {
           unreservedOpenOffers.add(openOfferManager.getOpenOfferById(unreservedOffer.getId()).get());
         }
         openOfferManager.removeOpenOffers(unreservedOpenOffers, null);
+
+        // set offer state
+        for (Offer offer : offers) {
+            Optional<OpenOffer> openOffer = openOfferManager.getOpenOfferById(offer.getId());
+            if (openOffer.isPresent()) offer.setState(openOffer.get().getState() == OpenOffer.State.AVAILABLE ? Offer.State.AVAILABLE : Offer.State.NOT_AVAILABLE);
+        }
+
         return offers;
     }
     

@@ -1,23 +1,23 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.apitest;
 
-import bisq.common.config.BisqHelpFormatter;
+import bisq.common.config.HavenoHelpFormatter;
 import bisq.common.util.Utilities;
 
 import java.nio.file.Files;
@@ -44,7 +44,7 @@ import javax.annotation.Nullable;
 import static bisq.apitest.Scaffold.BitcoinCoreApp.bitcoind;
 import static bisq.apitest.config.ApiTestConfig.MEDIATOR;
 import static bisq.apitest.config.ApiTestConfig.REFUND_AGENT;
-import static bisq.apitest.config.BisqAppConfig.*;
+import static bisq.apitest.config.HavenoAppConfig.*;
 import static bisq.common.app.DevEnv.DEV_PRIVILEGE_PRIV_KEY;
 import static java.lang.String.format;
 import static java.lang.System.exit;
@@ -57,9 +57,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 import bisq.apitest.config.ApiTestConfig;
-import bisq.apitest.config.BisqAppConfig;
+import bisq.apitest.config.HavenoAppConfig;
 import bisq.apitest.linux.BashCommand;
-import bisq.apitest.linux.BisqProcess;
+import bisq.apitest.linux.HavenoProcess;
 import bisq.apitest.linux.BitcoinDaemon;
 import bisq.apitest.linux.LinuxProcess;
 import bisq.cli.GrpcClient;
@@ -129,7 +129,7 @@ public class Scaffold {
         this.executor = Executors.newFixedThreadPool(config.supportingApps.size());
         if (config.helpRequested) {
             config.printHelp(out,
-                    new BisqHelpFormatter(
+                    new HavenoHelpFormatter(
                             "Bisq ApiTest",
                             "bisq-apitest",
                             "0.1.0"));
@@ -289,13 +289,13 @@ public class Scaffold {
             startBisqApp(bobdesktop, executor, countdownLatch);
     }
 
-    private void startBisqApp(BisqAppConfig bisqAppConfig,
+    private void startBisqApp(HavenoAppConfig havenoAppConfig,
                               ExecutorService executor,
                               CountDownLatch countdownLatch)
             throws IOException, InterruptedException {
 
-        BisqProcess bisqProcess = createBisqProcess(bisqAppConfig);
-        switch (bisqAppConfig) {
+        HavenoProcess bisqProcess = createBisqProcess(havenoAppConfig);
+        switch (havenoAppConfig) {
             case seednode:
                 seedNodeTask = new SetupTask(bisqProcess, countdownLatch);
                 seedNodeTaskFuture = executor.submit(seedNodeTask);
@@ -316,9 +316,9 @@ public class Scaffold {
                 bobNodeTaskFuture = executor.submit(bobNodeTask);
                 break;
             default:
-                throw new IllegalStateException("Unknown BisqAppConfig " + bisqAppConfig.name());
+                throw new IllegalStateException("Unknown HavenoAppConfig " + havenoAppConfig.name());
         }
-        log.info("Giving {} ms for {} to initialize ...", config.bisqAppInitTime, bisqAppConfig.appName);
+        log.info("Giving {} ms for {} to initialize ...", config.bisqAppInitTime, havenoAppConfig.appName);
         MILLISECONDS.sleep(config.bisqAppInitTime);
         if (bisqProcess.hasStartupExceptions()) {
             bisqProcess.logExceptions(bisqProcess.getStartupExceptions(), log);
@@ -326,9 +326,9 @@ public class Scaffold {
         }
     }
 
-    private BisqProcess createBisqProcess(BisqAppConfig bisqAppConfig)
+    private HavenoProcess createBisqProcess(HavenoAppConfig havenoAppConfig)
             throws IOException, InterruptedException {
-        BisqProcess bisqProcess = new BisqProcess(bisqAppConfig, config);
+        HavenoProcess bisqProcess = new HavenoProcess(havenoAppConfig, config);
         bisqProcess.verifyAppNotRunning();
         bisqProcess.verifyAppDataDirInstalled();
         return bisqProcess;

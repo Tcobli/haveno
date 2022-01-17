@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ This file is part of Bisq.
+  ~ This file is part of Haveno.
   ~
-  ~ Bisq is free software: you can redistribute it and/or modify it
+  ~ Haveno is free software: you can redistribute it and/or modify it
   ~ under the terms of the GNU Affero General Public License as published by
   ~ the Free Software Foundation, either version 3 of the License, or (at
   ~ your option) any later version.
   ~
-  ~ Bisq is distributed in the hope that it will be useful, but WITHOUT
+  ~ Haveno is distributed in the hope that it will be useful, but WITHOUT
   ~ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
   ~ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
   ~ License for more details.
   ~
   ~ You should have received a copy of the GNU Affero General Public License
-  ~ along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+  ~ along with Haveno. If not, see <http://www.gnu.org/licenses/>.
   -->
 
 <?import bisq.desktop.components.AutoTooltipButton?>
 <?import bisq.desktop.components.AutoTooltipCheckBox?>
 <?import bisq.desktop.components.AutoTooltipLabel?>
 <?import bisq.desktop.components.AutoTooltipRadioButton?>
-<?import bisq.desktop.components.BisqTextField?>
+<?import bisq.desktop.components.HavenoTextField?>
 <?import bisq.desktop.components.InputTextField?>
 <?import bisq.desktop.components.TitledGroupBg?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
@@ -46,24 +46,24 @@
     <TitledGroupBg fx:id="btcHeader" GridPane.rowSpan="5"/>
     <VBox GridPane.rowIndex="0" GridPane.hgrow="ALWAYS" GridPane.vgrow="SOMETIMES">
         <AutoTooltipLabel fx:id="bitcoinPeersLabel" styleClass="small-text"/>
-        <TableView fx:id="bitcoinPeersTableView">
+        <TableView fx:id="moneroPeersTableView">
             <columns>
-                <TableColumn fx:id="bitcoinPeerAddressColumn" minWidth="220">
+                <TableColumn fx:id="moneroPeerAddressColumn" minWidth="220">
                     <cellValueFactory>
                         <PropertyValueFactory property="onionAddress"/>
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn fx:id="bitcoinPeerVersionColumn" minWidth="80" maxWidth="90">
+                <TableColumn fx:id="moneroPeerVersionColumn" minWidth="80" maxWidth="90">
                     <cellValueFactory>
                         <PropertyValueFactory property="version"/>
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn fx:id="bitcoinPeerSubVersionColumn" minWidth="180" maxWidth="180">
+                <TableColumn fx:id="moneroPeerSubVersionColumn" minWidth="180" maxWidth="180">
                     <cellValueFactory>
                         <PropertyValueFactory property="subVersion"/>
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn fx:id="bitcoinPeerHeightColumn" minWidth="80" maxWidth="80">
+                <TableColumn fx:id="moneroPeerHeightColumn" minWidth="80" maxWidth="80">
                     <cellValueFactory>
                         <PropertyValueFactory property="height"/>
                     </cellValueFactory>
@@ -103,12 +103,12 @@
         </GridPane.margin>
     </TitledGroupBg>
 
-    <BisqTextField fx:id="onionAddress" GridPane.rowIndex="5"
+    <HavenoTextField fx:id="onionAddress" GridPane.rowIndex="5"
                    editable="false" focusTraversable="false" labelFloat="true">
         <GridPane.margin>
             <Insets top="60.0"/>
         </GridPane.margin>
-    </BisqTextField>
+    </HavenoTextField>
 
     <VBox GridPane.rowIndex="6" GridPane.hgrow="ALWAYS" GridPane.vgrow="SOMETIMES">
         <AutoTooltipLabel fx:id="p2PPeersLabel" styleClass="small-text"/>
@@ -153,13 +153,13 @@
         </TableView>
     </VBox>
 
-    <BisqTextField fx:id="sentDataTextField" GridPane.rowIndex="7" editable="false"
+    <HavenoTextField fx:id="sentDataTextField" GridPane.rowIndex="7" editable="false"
                    focusTraversable="false" labelFloat="true"/>
 
-    <BisqTextField fx:id="receivedDataTextField" GridPane.rowIndex="8" editable="false"
+    <HavenoTextField fx:id="receivedDataTextField" GridPane.rowIndex="8" editable="false"
                    focusTraversable="false" labelFloat="true"/>
 
-    <BisqTextField fx:id="chainHeightTextField" GridPane.rowIndex="9" editable="false"
+    <HavenoTextField fx:id="chainHeightTextField" GridPane.rowIndex="9" editable="false"
                    focusTraversable="false" labelFloat="true"/>
 
     <AutoTooltipButton fx:id="openTorSettingsButton" GridPane.rowIndex="10" GridPane.columnIndex="0"/>

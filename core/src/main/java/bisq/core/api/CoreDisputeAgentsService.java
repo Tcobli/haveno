@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.api;
@@ -22,7 +22,7 @@ import bisq.core.support.dispute.mediation.mediator.Mediator;
 import bisq.core.support.dispute.mediation.mediator.MediatorManager;
 import bisq.core.support.dispute.refund.refundagent.RefundAgent;
 import bisq.core.support.dispute.refund.refundagent.RefundAgentManager;
-
+import bisq.core.user.User;
 import bisq.network.p2p.NodeAddress;
 import bisq.network.p2p.P2PService;
 
@@ -54,6 +54,7 @@ import static java.util.Arrays.asList;
 @Slf4j
 class CoreDisputeAgentsService {
 
+    private final User user;
     private final Config config;
     private final KeyRing keyRing;
     private final MediatorManager mediatorManager;
@@ -63,17 +64,19 @@ class CoreDisputeAgentsService {
     private final List<String> languageCodes;
 
     @Inject
-    public CoreDisputeAgentsService(Config config,
+    public CoreDisputeAgentsService(User user,
+                                    Config config,
                                     KeyRing keyRing,
                                     MediatorManager mediatorManager,
                                     RefundAgentManager refundAgentManager,
                                     P2PService p2PService) {
+        this.user = user;
         this.config = config;
         this.keyRing = keyRing;
         this.mediatorManager = mediatorManager;
         this.refundAgentManager = refundAgentManager;
         this.p2PService = p2PService;
-        this.nodeAddress = new NodeAddress(getLoopbackAddress().getHostAddress(), config.nodePort);
+        this.nodeAddress = new NodeAddress(getLoopbackAddress().getHostName(), config.nodePort);
         this.languageCodes = asList("de", "en", "es", "fr");
     }
 
@@ -96,11 +99,19 @@ class CoreDisputeAgentsService {
                 case ARBITRATION:
                     throw new IllegalArgumentException("arbitrators must be registered in a Bisq UI");
                 case MEDIATION:
+                    if (user.getRegisteredMediator() != null) {
+                        log.warn("ignoring request to re-register as mediator");
+                        return;
+                    }
                     ecKey = mediatorManager.getRegistrationKey(registrationKey);
                     signature = mediatorManager.signStorageSignaturePubKey(Objects.requireNonNull(ecKey));
                     registerMediator(nodeAddress, languageCodes, ecKey, signature);
                     return;
                 case REFUND:
+                    if (user.getRegisteredRefundAgent() != null) {
+                        log.warn("ignoring request to re-register as refund agent");
+                        return;
+                    }
                     ecKey = refundAgentManager.getRegistrationKey(registrationKey);
                     signature = refundAgentManager.signStorageSignaturePubKey(Objects.requireNonNull(ecKey));
                     registerRefundAgent(nodeAddress, languageCodes, ecKey, signature);

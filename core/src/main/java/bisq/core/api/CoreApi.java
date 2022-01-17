@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.api;
@@ -36,6 +36,8 @@ import bisq.common.config.Config;
 import bisq.common.handlers.ErrorMessageHandler;
 import bisq.common.handlers.ResultHandler;
 
+import bisq.proto.grpc.NotificationMessage;
+
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Transaction;
 
@@ -52,7 +54,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+
+
+import monero.wallet.model.MoneroDestination;
+import monero.wallet.model.MoneroTxWallet;
 
 /**
  * Provides high level interface to functionality of core Bisq features.
@@ -72,6 +80,7 @@ public class CoreApi {
     private final CoreTradesService coreTradesService;
     private final CoreWalletsService walletsService;
     private final TradeStatisticsManager tradeStatisticsManager;
+    private final CoreNotificationService notificationService;
 
     @Inject
     public CoreApi(Config config,
@@ -82,7 +91,8 @@ public class CoreApi {
                    CorePriceService corePriceService,
                    CoreTradesService coreTradesService,
                    CoreWalletsService walletsService,
-                   TradeStatisticsManager tradeStatisticsManager) {
+                   TradeStatisticsManager tradeStatisticsManager,
+                   CoreNotificationService notificationService) {
         this.config = config;
         this.coreDisputeAgentsService = coreDisputeAgentsService;
         this.coreHelpService = coreHelpService;
@@ -92,6 +102,7 @@ public class CoreApi {
         this.corePriceService = corePriceService;
         this.walletsService = walletsService;
         this.tradeStatisticsManager = tradeStatisticsManager;
+        this.notificationService = notificationService;
     }
 
     @SuppressWarnings("SameReturnValue")
@@ -107,6 +118,21 @@ public class CoreApi {
         coreDisputeAgentsService.registerDisputeAgent(disputeAgentType, registrationKey);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // Notifications
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
+    public interface NotificationListener {
+        void onMessage(@NonNull NotificationMessage message);
+    }
+
+    public void addNotificationListener(NotificationListener listener) {
+        notificationService.addListener(listener);
+    }
+
+    public void sendNotification(NotificationMessage notification) {
+        notificationService.sendNotification(notification);
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     // Help
@@ -244,11 +270,15 @@ public class CoreApi {
                           String paymentAccountId,
                           Consumer<Trade> resultHandler,
                           ErrorMessageHandler errorMessageHandler) {
-        Offer offer = coreOffersService.getOffer(offerId);
-        coreTradesService.takeOffer(offer,
-                paymentAccountId,
-                resultHandler,
-                errorMessageHandler);
+        try {
+            Offer offer = coreOffersService.getOffer(offerId);
+            coreTradesService.takeOffer(offer,
+                    paymentAccountId,
+                    resultHandler,
+                    errorMessageHandler);
+        } catch (Exception e) {
+            errorMessageHandler.handleErrorMessage(e.getMessage());
+        }
     }
 
     public void confirmPaymentStarted(String tradeId) {
@@ -271,6 +301,10 @@ public class CoreApi {
         return coreTradesService.getTrade(tradeId);
     }
 
+    public List<Trade> getTrades() {
+        return coreTradesService.getTrades();
+    }
+
     public String getTradeRole(String tradeId) {
         return coreTradesService.getTradeRole(tradeId);
     }
@@ -285,6 +319,18 @@ public class CoreApi {
 
     public String getNewDepositSubaddress() {
         return walletsService.getNewDepositSubaddress();
+    }
+
+    public List<MoneroTxWallet> getXmrTxs() {
+        return walletsService.getXmrTxs();
+    }
+
+    public MoneroTxWallet createXmrTx(List<MoneroDestination> destinations) {
+        return walletsService.createXmrTx(destinations);
+    }
+
+    public String relayXmrTx(String metadata) {
+        return walletsService.relayXmrTx(metadata);
     }
 
     public long getAddressBalance(String addressString) {

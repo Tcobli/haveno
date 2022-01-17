@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.api;
@@ -38,7 +38,8 @@ import org.bitcoinj.core.Coin;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -89,31 +90,35 @@ class CoreTradesService {
                    String paymentAccountId,
                    Consumer<Trade> resultHandler,
                    ErrorMessageHandler errorMessageHandler) {
-        coreWalletsService.verifyWalletsAreAvailable();
-        coreWalletsService.verifyEncryptedWalletIsUnlocked();
+        try {
+            coreWalletsService.verifyWalletsAreAvailable();
+            coreWalletsService.verifyEncryptedWalletIsUnlocked();
 
-        var paymentAccount = user.getPaymentAccount(paymentAccountId);
-        if (paymentAccount == null)
-            throw new IllegalArgumentException(format("payment account with id '%s' not found", paymentAccountId));
+            var paymentAccount = user.getPaymentAccount(paymentAccountId);
+            if (paymentAccount == null)
+                throw new IllegalArgumentException(format("payment account with id '%s' not found", paymentAccountId));
 
-        var useSavingsWallet = true;
-        //noinspection ConstantConditions
-        takeOfferModel.initModel(offer, paymentAccount, useSavingsWallet);
-        log.info("Initiating take {} offer, {}",
-                offer.isBuyOffer() ? "buy" : "sell",
-                takeOfferModel);
-        //noinspection ConstantConditions
-        tradeManager.onTakeOffer(offer.getAmount(),
-                takeOfferModel.getTxFeeFromFeeService(),
-                takeOfferModel.getTakerFee(),
-                takeOfferModel.getFundsNeededForTrade(),
-                offer,
-                paymentAccountId,
-                useSavingsWallet,
-                coreContext.isApiUser(),
-                resultHandler::accept,
-                errorMessageHandler
-        );
+            var useSavingsWallet = true;
+            //noinspection ConstantConditions
+            takeOfferModel.initModel(offer, paymentAccount, useSavingsWallet);
+            log.info("Initiating take {} offer, {}",
+                    offer.isBuyOffer() ? "buy" : "sell",
+                    takeOfferModel);
+            //noinspection ConstantConditions
+            tradeManager.onTakeOffer(offer.getAmount(),
+                    takeOfferModel.getTxFeeFromFeeService(),
+                    takeOfferModel.getTakerFee(),
+                    takeOfferModel.getFundsNeededForTrade(),
+                    offer,
+                    paymentAccountId,
+                    useSavingsWallet,
+                    coreContext.isApiUser(),
+                    resultHandler::accept,
+                    errorMessageHandler
+            );
+        } catch (Exception e) {
+            errorMessageHandler.handleErrorMessage(e.getMessage());
+        }
     }
 
     void confirmPaymentStarted(String tradeId) {
@@ -222,6 +227,14 @@ class CoreTradesService {
     private Optional<Trade> getClosedTrade(String tradeId) {
         Optional<Tradable> tradable = closedTradableManager.getTradableById(tradeId);
         return tradable.filter((t) -> t instanceof Trade).map(value -> (Trade) value);
+    }
+
+    List<Trade> getTrades() {
+        coreWalletsService.verifyWalletsAreAvailable();
+        coreWalletsService.verifyEncryptedWalletIsUnlocked();
+        List<Trade> trades = new ArrayList<Trade>(tradeManager.getTrades());
+        trades.addAll(closedTradableManager.getClosedTrades());
+        return trades;
     }
 
     private boolean isFollowingBuyerProtocol(Trade trade) {

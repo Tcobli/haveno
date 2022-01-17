@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.trade.protocol.tasks;
@@ -71,16 +71,10 @@ public class UpdateMultisigWithTradingPeer extends TradeTask {
               @Override
               public void onVerifiedTradeMessage(TradeMessage message, NodeAddress sender) {
                 if (!(message instanceof UpdateMultisigResponse)) return;
-
-                System.out.println("Received UpdateMultisigResponse!!!");
-                System.out.println(message);
-                System.out.println(sender);
-
                 UpdateMultisigResponse response = (UpdateMultisigResponse) message;
-                int numOutputsSigned = multisigWallet.importMultisigHex(Arrays.asList(response.getUpdatedMultisigHex()));
+                multisigWallet.importMultisigHex(Arrays.asList(response.getUpdatedMultisigHex()));
                 multisigWallet.sync();
                 multisigWallet.save();
-                System.out.println("Num outputs signed with imported multisig hex: " + numOutputsSigned);
                 trade.removeListener(updateMultisigResponseListener);
                 complete();
               }

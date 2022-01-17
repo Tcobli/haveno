@@ -16,20 +16,20 @@
  */
 
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.btc.wallet;
@@ -72,8 +72,8 @@ import static com.google.common.base.Preconditions.checkState;
  * whether a tx/dependency violates the dust rules. Outside of specialised protocols you should not encounter non-final
  * transactions.</p>
  */
-public class BisqRiskAnalysis implements RiskAnalysis {
-    private static final Logger log = LoggerFactory.getLogger(BisqRiskAnalysis.class);
+public class HavenoRiskAnalysis implements RiskAnalysis {
+    private static final Logger log = LoggerFactory.getLogger(HavenoRiskAnalysis.class);
 
     /**
      * Any standard output smaller than this value (in satoshis) will be considered risky, as it's most likely be
@@ -91,7 +91,7 @@ public class BisqRiskAnalysis implements RiskAnalysis {
     protected Transaction nonFinal;
     protected boolean analyzed;
 
-    private BisqRiskAnalysis(Wallet wallet, Transaction tx, List<Transaction> dependencies) {
+    private HavenoRiskAnalysis(Wallet wallet, Transaction tx, List<Transaction> dependencies) {
         this.tx = tx;
         this.dependencies = dependencies;
         this.wallet = wallet;
@@ -289,8 +289,8 @@ public class BisqRiskAnalysis implements RiskAnalysis {
 
     public static class Analyzer implements RiskAnalysis.Analyzer {
         @Override
-        public BisqRiskAnalysis create(Wallet wallet, Transaction tx, List<Transaction> dependencies) {
-            return new BisqRiskAnalysis(wallet, tx, dependencies);
+        public HavenoRiskAnalysis create(Wallet wallet, Transaction tx, List<Transaction> dependencies) {
+            return new HavenoRiskAnalysis(wallet, tx, dependencies);
         }
     }
 

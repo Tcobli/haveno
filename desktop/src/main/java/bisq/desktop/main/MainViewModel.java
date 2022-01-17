@@ -1,23 +1,23 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.desktop.main;
 
-import bisq.desktop.app.BisqApp;
+import bisq.desktop.app.HavenoApp;
 import bisq.desktop.common.model.ViewModel;
 import bisq.desktop.components.TxIdTextField;
 import bisq.desktop.main.overlays.Overlay;
@@ -40,7 +40,7 @@ import bisq.desktop.util.GUIUtil;
 import bisq.core.account.sign.SignedWitnessService;
 import bisq.core.account.witness.AccountAgeWitnessService;
 import bisq.core.alert.PrivateNotificationManager;
-import bisq.core.app.BisqSetup;
+import bisq.core.app.HavenoSetup;
 import bisq.core.btc.nodes.LocalBitcoinNode;
 import bisq.core.btc.setup.WalletsSetup;
 import bisq.core.btc.wallet.BtcWalletService;
@@ -107,8 +107,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MainViewModel implements ViewModel, BisqSetup.BisqSetupListener {
-    private final BisqSetup bisqSetup;
+public class MainViewModel implements ViewModel, HavenoSetup.HavenoSetupListener {
+    private final HavenoSetup bisqSetup;
     private final WalletsSetup walletsSetup;
     private final User user;
     private final BalancePresentation balancePresentation;
@@ -152,7 +152,7 @@ public class MainViewModel implements ViewModel, BisqSetup.BisqSetupListener {
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Inject
-    public MainViewModel(BisqSetup bisqSetup,
+    public MainViewModel(HavenoSetup bisqSetup,
                          WalletsSetup walletsSetup,
                          BtcWalletService btcWalletService,
                          User user,
@@ -209,12 +209,12 @@ public class MainViewModel implements ViewModel, BisqSetup.BisqSetupListener {
         GUIUtil.setPreferences(preferences);
 
         setupHandlers();
-        bisqSetup.addBisqSetupListener(this);
+        bisqSetup.addHavenoSetupListener(this);
     }
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////
-    // BisqSetupListener
+    // HavenoSetupListener
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
@@ -338,7 +338,7 @@ public class MainViewModel implements ViewModel, BisqSetup.BisqSetupListener {
         bisqSetup.setShowFirstPopupIfResyncSPVRequestedHandler(this::showFirstPopupIfResyncSPVRequested);
         bisqSetup.setRequestWalletPasswordHandler(aesKeyHandler -> walletPasswordWindow
                 .onAesKey(aesKeyHandler::accept)
-                .onClose(() -> BisqApp.getShutDownHandler().run())
+                .onClose(() -> HavenoApp.getShutDownHandler().run())
                 .show());
 
         bisqSetup.setDisplayUpdateHandler((alert, key) -> new DisplayUpdateDownloadWindow(alert, config)
@@ -554,7 +554,7 @@ public class MainViewModel implements ViewModel, BisqSetup.BisqSetupListener {
 
     private void showSecondPopupIfResyncSPVRequested(Popup firstPopup) {
         firstPopup.hide();
-        BisqSetup.setResyncSpvSemaphore(false);
+        HavenoSetup.setResyncSpvSemaphore(false);
         new Popup().information(Res.get("settings.net.reSyncSPVAfterRestartCompleted"))
                 .hideCloseButton()
                 .useShutDownButton()

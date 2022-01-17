@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.app;
@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 /**
  * Handles the initialisation of domain classes. We should refactor to the model that the domain classes listen on the
  * relevant start up state from AppStartupState instead to get called. Only for initialisation which has a required
- * order we will still need this class. For now it helps to keep BisqSetup more focussed on the process and not getting
+ * order we will still need this class. For now it helps to keep HavenoSetup more focussed on the process and not getting
  * overloaded with domain initialisation code.
  */
 public class DomainInitialisation {

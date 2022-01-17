@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.trade.protocol;
@@ -20,6 +20,7 @@ package bisq.core.trade.protocol;
 import bisq.core.offer.Offer;
 import bisq.core.trade.Trade;
 import bisq.core.trade.TradeManager;
+import bisq.core.trade.handlers.TradeResultHandler;
 import bisq.core.trade.messages.CounterCurrencyTransferStartedMessage;
 import bisq.core.trade.messages.DepositTxAndDelayedPayoutTxMessage;
 import bisq.core.trade.messages.InitMultisigRequest;
@@ -60,6 +61,8 @@ public abstract class TradeProtocol implements DecryptedDirectMessageListener, D
     protected final ProcessModel processModel;
     protected final Trade trade;
     private Timer timeoutTimer;
+    protected TradeResultHandler tradeResultHandler;
+    protected ErrorMessageHandler errorMessageHandler;
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////
@@ -205,8 +208,8 @@ public abstract class TradeProtocol implements DecryptedDirectMessageListener, D
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     protected abstract void onTradeMessage(TradeMessage message, NodeAddress peer);
-    public abstract void handleInitMultisigRequest(InitMultisigRequest request, NodeAddress peer, ErrorMessageHandler errorMessageHandler);
-    public abstract void handleSignContractRequest(SignContractRequest request, NodeAddress peer, ErrorMessageHandler errorMessageHandler);
+    public abstract void handleInitMultisigRequest(InitMultisigRequest request, NodeAddress peer);
+    public abstract void handleSignContractRequest(SignContractRequest request, NodeAddress peer);
 
     // TODO (woodser): update to use fluent for consistency
     public void handleUpdateMultisigRequest(UpdateMultisigRequest message, NodeAddress peer, ErrorMessageHandler errorMessageHandler) {
@@ -348,12 +351,10 @@ public abstract class TradeProtocol implements DecryptedDirectMessageListener, D
 
     protected void startTimeout(long timeoutSec) {
         stopTimeout();
-
         timeoutTimer = UserThread.runAfter(() -> {
-            log.error("Timeout reached. TradeID={}, state={}, timeoutSec={}",
-                    trade.getId(), trade.stateProperty().get(), timeoutSec);
+            log.error("Timeout reached. TradeID={}, state={}, timeoutSec={}", trade.getId(), trade.stateProperty().get(), timeoutSec);
             trade.setErrorMessage("Timeout reached. Protocol did not complete in " + timeoutSec + " sec.");
-
+            if (errorMessageHandler != null) errorMessageHandler.handleErrorMessage("Timeout reached. Protocol did not complete in " + timeoutSec + " sec. TradeID=" + trade.getId() + ", state=" + trade.stateProperty().get());
             processModel.getTradeManager().requestPersistence();
             cleanup();
         }, timeoutSec);

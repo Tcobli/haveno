@@ -1,26 +1,26 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.desktop.util;
 
 import bisq.desktop.Navigation;
-import bisq.desktop.app.BisqApp;
+import bisq.desktop.app.HavenoApp;
 import bisq.desktop.components.AutoTooltipLabel;
-import bisq.desktop.components.BisqTextArea;
+import bisq.desktop.components.HavenoTextArea;
 import bisq.desktop.components.InfoAutoTooltipLabel;
 import bisq.desktop.components.indicator.TxConfidenceIndicator;
 import bisq.desktop.main.MainView;
@@ -30,7 +30,7 @@ import bisq.desktop.main.overlays.popups.Popup;
 
 import bisq.core.account.witness.AccountAgeWitness;
 import bisq.core.account.witness.AccountAgeWitnessService;
-import bisq.core.app.BisqSetup;
+import bisq.core.app.HavenoSetup;
 import bisq.core.btc.setup.WalletsSetup;
 import bisq.core.locale.Country;
 import bisq.core.locale.CountryUtil;
@@ -785,7 +785,7 @@ public class GUIUtil {
     }
 
     public static boolean canCreateOrTakeOfferOrShowPopup(User user, Navigation navigation) {
-        
+
         // TODO (woodser): use refund agents to dispute arbitration?
         if (!user.hasAcceptedRefundAgents()) {
             log.warn("There are no refund agents available"); // TODO (woodser): refund agents changing from [4444] to [] causing this error
@@ -827,8 +827,8 @@ public class GUIUtil {
                     .useShutDownButton()
                     .actionButtonText(Res.get("shared.shutDown"))
                     .onAction(() -> {
-                        BisqSetup.setResyncSpvSemaphore(true);
-                        UserThread.runAfter(BisqApp.getShutDownHandler(), 100, TimeUnit.MILLISECONDS);
+                        HavenoSetup.setResyncSpvSemaphore(true);
+                        UserThread.runAfter(HavenoApp.getShutDownHandler(), 100, TimeUnit.MILLISECONDS);
                     })
                     .closeButtonText(Res.get("shared.cancel"))
                     .show();
@@ -838,7 +838,7 @@ public class GUIUtil {
     }
 
     public static void showSelectableTextModal(String title, String text) {
-        TextArea textArea = new BisqTextArea();
+        TextArea textArea = new HavenoTextArea();
         textArea.setText(text);
         textArea.setEditable(false);
         textArea.setWrapText(true);

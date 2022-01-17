@@ -1,18 +1,18 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.api.model;
@@ -94,8 +94,8 @@ public class ContractInfo implements Payload {
                 proto.getIsBuyerMakerAndSellerTaker(),
                 proto.getMakerAccountId(),
                 proto.getTakerAccountId(),
-                PaymentAccountPayloadInfo.fromProto(proto.getMakerPaymentAccountPayload()),
-                PaymentAccountPayloadInfo.fromProto(proto.getTakerPaymentAccountPayload()),
+                proto.getMakerPaymentAccountPayload() == null ? null : PaymentAccountPayloadInfo.fromProto(proto.getMakerPaymentAccountPayload()),
+                proto.getTakerPaymentAccountPayload() == null ? null : PaymentAccountPayloadInfo.fromProto(proto.getTakerPaymentAccountPayload()),
                 proto.getMakerPayoutAddressString(),
                 proto.getTakerPayoutAddressString(),
                 proto.getLockTime());
@@ -103,18 +103,18 @@ public class ContractInfo implements Payload {
 
     @Override
     public bisq.proto.grpc.ContractInfo toProtoMessage() {
-        return bisq.proto.grpc.ContractInfo.newBuilder()
+        bisq.proto.grpc.ContractInfo.Builder builder = bisq.proto.grpc.ContractInfo.newBuilder()
                 .setBuyerNodeAddress(buyerNodeAddress)
                 .setSellerNodeAddress(sellerNodeAddress)
                 .setArbitratorNodeAddress(arbitratorNodeAddress)
                 .setIsBuyerMakerAndSellerTaker(isBuyerMakerAndSellerTaker)
                 .setMakerAccountId(makerAccountId)
                 .setTakerAccountId(takerAccountId)
-                .setMakerPaymentAccountPayload(makerPaymentAccountPayload.toProtoMessage())
-                .setTakerPaymentAccountPayload(takerPaymentAccountPayload.toProtoMessage())
                 .setMakerPayoutAddressString(makerPayoutAddressString)
                 .setTakerPayoutAddressString(takerPayoutAddressString)
-                .setLockTime(lockTime)
-                .build();
+                .setLockTime(lockTime);
+       if (makerPaymentAccountPayload != null) builder.setMakerPaymentAccountPayload(makerPaymentAccountPayload.toProtoMessage());
+       if (takerPaymentAccountPayload != null) builder.setTakerPaymentAccountPayload(takerPaymentAccountPayload.toProtoMessage());
+       return builder.build();
     }
 }

@@ -1,25 +1,25 @@
 /*
- * This file is part of Bisq.
+ * This file is part of Haveno.
  *
- * Bisq is free software: you can redistribute it and/or modify it
+ * Haveno is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
  *
- * Bisq is distributed in the hope that it will be useful, but WITHOUT
+ * Haveno is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with Bisq. If not, see <http://www.gnu.org/licenses/>.
+ * along with Haveno. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package bisq.core.btc.setup;
 
 import bisq.core.btc.nodes.LocalBitcoinNode;
 import bisq.core.btc.nodes.ProxySocketFactory;
-import bisq.core.btc.wallet.BisqRiskAnalysis;
+import bisq.core.btc.wallet.HavenoRiskAnalysis;
 
 import bisq.common.config.Config;
 import bisq.common.file.FileUtil;
@@ -88,8 +88,6 @@ import static bisq.common.util.Preconditions.checkDir;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-
-
 import monero.common.MoneroUtils;
 import monero.daemon.MoneroDaemon;
 import monero.daemon.MoneroDaemonRpc;
@@ -132,7 +130,8 @@ public class WalletConfig extends AbstractIdleService {
     private static final String MONERO_DAEMON_USERNAME = "superuser";
     private static final String MONERO_DAEMON_PASSWORD = "abctesting123";
     private static final MoneroWalletRpcManager MONERO_WALLET_RPC_MANAGER = new MoneroWalletRpcManager();
-    private static final String MONERO_WALLET_RPC_PATH = System.getProperty("user.dir") + File.separator + ".localnet" + File.separator + "monero-wallet-rpc"; // use wallet rpc in .localnet
+    private static final String MONERO_WALLET_RPC_DIR = System.getProperty("user.dir") + File.separator + ".localnet"; // .localnet contains monero-wallet-rpc and wallet files
+    private static final String MONERO_WALLET_RPC_PATH = MONERO_WALLET_RPC_DIR + File.separator + "monero-wallet-rpc";
     private static final String MONERO_WALLET_RPC_USERNAME = "rpc_user";
     private static final String MONERO_WALLET_RPC_PASSWORD = "abc123";
     private static final long MONERO_WALLET_SYNC_RATE = 5000l;
@@ -152,7 +151,7 @@ public class WalletConfig extends AbstractIdleService {
     protected volatile File vBtcWalletFile;
 
     protected PeerAddress[] peerAddresses;
-    protected DownloadProgressTracker downloadListener;
+    protected DownloadListener downloadListener;
     protected InputStream checkpoints;
     protected String userAgent, version;
     @Nullable
@@ -235,7 +234,7 @@ public class WalletConfig extends AbstractIdleService {
      * If you want to learn about the sync process, you can provide a listener here. For instance, a
      * {@link DownloadProgressTracker} is a good choice.
      */
-    public WalletConfig setDownloadListener(DownloadProgressTracker listener) {
+    public WalletConfig setDownloadListener(DownloadListener listener) {
         this.downloadListener = listener;
         return this;
     }
@@ -292,6 +291,11 @@ public class WalletConfig extends AbstractIdleService {
         // Meant to be overridden by subclasses
     }
 
+    public boolean walletExists(String walletName) {
+      String path = directory.toString() + File.separator + walletName;
+      return new File(path + ".keys").exists();
+    }
+
     public MoneroWalletRpc createWallet(MoneroWalletConfig config, Integer port) {
 
       // start monero-wallet-rpc instance
@@ -304,7 +308,7 @@ public class WalletConfig extends AbstractIdleService {
         return walletRpc;
       } catch (Exception e) {
         e.printStackTrace();
-        WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance(walletRpc);
+        WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance(walletRpc, false);
         throw e;
       }
     }
@@ -321,7 +325,7 @@ public class WalletConfig extends AbstractIdleService {
         return walletRpc;
       } catch (Exception e) {
         e.printStackTrace();
-        WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance(walletRpc);
+        WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance(walletRpc, false);
         throw e;
       }
     }
@@ -347,8 +351,17 @@ public class WalletConfig extends AbstractIdleService {
       return WalletConfig.MONERO_WALLET_RPC_MANAGER.startInstance(cmd);
     }
 
-    public void closeWallet(MoneroWallet walletRpc) {
-      WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance((MoneroWalletRpc) walletRpc);
+    public void closeWallet(MoneroWallet walletRpc, boolean save) {
+      WalletConfig.MONERO_WALLET_RPC_MANAGER.stopInstance((MoneroWalletRpc) walletRpc, save);
+    }
+
+    public void deleteWallet(String walletName) {
+      if (!walletExists(walletName)) throw new Error("Wallet does not exist at path: " + walletName);
+      String path = directory.toString() + File.separator + walletName;
+      if (!new File(path).delete()) throw new RuntimeException("Failed to delete wallet file: " + path);
+      if (!new File(path + ".keys").delete()) throw new RuntimeException("Failed to delete wallet file: " + path);
+      if (!new File(path + ".address.txt").delete()) throw new RuntimeException("Failed to delete wallet file: " + path);
+      //WalletsSetup.deleteRollingBackup(walletName); // TODO (woodser): necessary to delete rolling backup?
     }
 
     @Override
@@ -375,7 +388,8 @@ public class WalletConfig extends AbstractIdleService {
             System.out.println("Monero wallet uri: " + vXmrWallet.getRpcConnection().getUri());
 //            vXmrWallet.rescanSpent();
 //            vXmrWallet.rescanBlockchain();
-            vXmrWallet.sync();
+            vXmrWallet.sync(); // blocking
+            downloadListener.doneDownload();
             vXmrWallet.save();
             System.out.println("Loaded wallet balance: " + vXmrWallet.getBalance(0));
             System.out.println("Loaded wallet unlocked balance: " + vXmrWallet.getUnlockedBalance(0));
@@ -385,7 +399,7 @@ public class WalletConfig extends AbstractIdleService {
             boolean shouldReplayWallet = (vBtcWalletFile.exists() && !chainFileExists) || restoreFromSeed != null;
             vBtcWallet = createOrLoadWallet(shouldReplayWallet, vBtcWalletFile);
             vBtcWallet.allowSpendingUnconfirmedTransactions();
-            vBtcWallet.setRiskAnalyzer(new BisqRiskAnalysis.Analyzer());
+            vBtcWallet.setRiskAnalyzer(new HavenoRiskAnalysis.Analyzer());
 
             // Initiate Bitcoin network objects (block store, blockchain and peer group)
             vStore = new SPVBlockStore(params, chainFile);
@@ -458,7 +472,7 @@ public class WalletConfig extends AbstractIdleService {
             @Override
             public void onSuccess(@Nullable Object result) {
                 //completeExtensionInitiations(vPeerGroup);
-                DownloadProgressTracker tracker = downloadListener == null ? new DownloadProgressTracker() : downloadListener;
+                DownloadProgressTracker tracker = new DownloadProgressTracker();
                 vPeerGroup.startBlockChainDownload(tracker);
             }
 
@@ -506,7 +520,7 @@ public class WalletConfig extends AbstractIdleService {
             final WalletProtobufSerializer serializer;
             serializer = new WalletProtobufSerializer();
             // Hack to convert bitcoinj 0.14 wallets to bitcoinj 0.15 format
-            serializer.setKeyChainFactory(new BisqKeyChainFactory());
+            serializer.setKeyChainFactory(new HavenoKeyChainFactory());
             wallet = serializer.readWallet(params, extArray, proto);
             if (shouldReplayWallet)
                 wallet.reset();
@@ -517,7 +531,7 @@ public class WalletConfig extends AbstractIdleService {
 
     protected Wallet createWallet() {
         Script.ScriptType preferredOutputScriptType = Script.ScriptType.P2WPKH;
-        KeyChainGroupStructure structure = new BisqKeyChainGroupStructure();
+        KeyChainGroupStructure structure = new HavenoKeyChainGroupStructure();
         KeyChainGroup.Builder kcgBuilder = KeyChainGroup.builder(params, structure);
         if (restoreFromSeed != null) {
             kcgBuilder.fromSeed(restoreFromSeed, preferredOutputScriptType);
@@ -642,7 +656,7 @@ public class WalletConfig extends AbstractIdleService {
     }
 
     public void maybeAddSegwitKeychain(Wallet wallet, KeyParameter aesKey) {
-        if (BisqKeyChainGroupStructure.BIP44_BTC_NON_SEGWIT_ACCOUNT_PATH.equals(wallet.getActiveKeyChain().getAccountPath())) {
+        if (HavenoKeyChainGroupStructure.BIP44_BTC_NON_SEGWIT_ACCOUNT_PATH.equals(wallet.getActiveKeyChain().getAccountPath())) {
             if (wallet.isEncrypted() && aesKey == null) {
                 // wait for the aesKey to be set and this method to be invoked again.
                 return;
@@ -664,7 +678,7 @@ public class WalletConfig extends AbstractIdleService {
             }
             DeterministicKeyChain nativeSegwitKeyChain = DeterministicKeyChain.builder().seed(seed)
                     .outputScriptType(Script.ScriptType.P2WPKH)
-                    .accountPath(new BisqKeyChainGroupStructure().accountPathFor(Script.ScriptType.P2WPKH)).build();
+                    .accountPath(new HavenoKeyChainGroupStructure().accountPathFor(Script.ScriptType.P2WPKH)).build();
             if (aesKey != null) {
                 // If wallet is encrypted, encrypt the new keychain.
                 KeyCrypter keyCrypter = wallet.getKeyCrypter();

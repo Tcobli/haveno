@@ -40,7 +40,7 @@ configure(subprojects) {
         grpcVersion = '1.25.0'
         gsonVersion = '2.8.5'
         guavaVersion = '28.2-jre'
-        moneroJavaVersion = '0.5.9'
+        moneroJavaVersion = '0.6.0'
         httpclient5Version = '5.0'
         guiceVersion = '4.2.2'
         hamcrestVersion = '1.3'
@@ -268,6 +268,11 @@ configure(project(':common')) {
         compileOnly "org.projectlombok:lombok:$lombokVersion"
         annotationProcessor "org.projectlombok:lombok:$lombokVersion"
         testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
+
+        // override transitive dependency version from 1.5 to the same version just identified by commit number. 
+        // Remove this if transitive dependency is changed to something else than 1.5
+        compile( group: 'com.github.JesusMcCloud', name: 'jtorctl') { version { strictly "[9b5ba2036b]" } }
+
     }
 }
 
@@ -401,7 +406,7 @@ configure(project(':desktop')) {
         "Implementation-Title": project.name,
         "Implementation-Version": version)
 
-    mainClassName = 'bisq.desktop.app.BisqAppMain'
+    mainClassName = 'bisq.desktop.app.HavenoAppMain'
 
     tasks.withType(AbstractArchiveTask) {
         preserveFileTimestamps = false
@@ -580,7 +585,7 @@ configure(project(':statsnode')) {
 }
 
 configure(project(':daemon')) {
-    mainClassName = 'bisq.daemon.app.BisqDaemonMain'
+    mainClassName = 'bisq.daemon.app.HavenoDaemonMain'
 
     dependencies {
         compile project(':core')
